@@ -1,6 +1,9 @@
+import os
+
 from tkinter import *
 from tkinter.colorchooser import askcolor
 from tkinter import filedialog
+from gui_autoscrollbar import AutoScrollbar
 from PIL import ImageTk, Image, ImageGrab
 
 
@@ -14,33 +17,53 @@ class Image_Markup(object):
     def __init__(self):
         self.root = Tk()
         self.root.title('SEE Image Markup Tool')
+        self.root.maxsize(900, 900)
 
-        self.point_button = Button(self.root, text='Point Select', command=self.use_point_select)
-        self.point_button.grid(row=0, column=0)
+        top_frame = Frame(self.root,  width=900,  height=50)
+        top_frame.pack(side='top',  fill='both',  padx=10,  pady=5,  expand=True)
 
-        self.brush_button = Button(self.root, text='Brush', command=self.use_brush)
-        self.brush_button.grid(row=0, column=1)
+        self.point_button = Button(top_frame, text='Point Select', command=self.use_point_select)
+        self.point_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.color_button = Button(self.root, text='Color', command=self.choose_color)
-        self.color_button.grid(row=0, column=2)
+        self.brush_button = Button(top_frame, text='Brush', command=self.use_brush)
+        self.brush_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.eraser_button = Button(self.root, text='Eraser', command=self.use_eraser)
-        self.eraser_button.grid(row=0, column=3)
+        self.color_button = Button(top_frame, text='Color', command=self.choose_color)
+        self.color_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.browse_button = Button(self.root, text='Browse', command=self.browseFiles)
-        self.browse_button.grid(row=0, column=4)
+        self.eraser_button = Button(top_frame, text='Eraser', command=self.use_eraser)
+        self.eraser_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.clear_button = Button(self.root, text='Clear All', command=self.clear_all)
-        self.clear_button.grid(row=0, column=5)
+        self.browse_button = Button(top_frame, text='Browse', command=self.browseFiles)
+        self.browse_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.choose_size_button = Scale(self.root, from_=10, to=50, orient=HORIZONTAL)
-        self.choose_size_button.grid(row=0, column=6)
+        self.clear_button = Button(top_frame, text='Clear All', command=self.clear_all)
+        self.clear_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.save_button = Button(self.root, text='Save', command=self.save_canvas)
-        self.save_button.grid(row=0, column=9)
+        self.choose_size_button = Scale(top_frame, from_=10, to=50, orient=HORIZONTAL)
+        self.choose_size_button.pack(side='left', expand = True, fill = BOTH)
 
-        self.c = Canvas(self.root, bg='white', width=self.Image_Width, height=self.Image_Height)
-        self.c.grid(row=1, columnspan=10)
+        self.save_button = Button(top_frame, text='Save', command=self.save_canvas)
+        self.save_button.pack(side='left', expand = True, fill = BOTH)
+
+        # bottom_frame = Frame(self.root,  width=900,  height=850)
+        # bottom_frame.pack(side='bottom',  fill='both',  padx=10,  pady=5,  expand=True)
+
+        self.imframe = Frame(self.root,  width=900,  height=850)
+        self.imframe.pack(side='bottom',  fill='both',  padx=10,  pady=5,  expand=True)
+
+        hbar = AutoScrollbar(self.imframe, orient='horizontal')
+        vbar = AutoScrollbar(self.imframe, orient='vertical')
+        hbar.grid(row=1, column=0, sticky='we')
+        vbar.grid(row=0, column=1, sticky='ns')
+
+        self.c = Canvas(self.imframe, bg='white', width=self.Image_Width, height=self.Image_Height)
+        self.c.grid(row=0, column=0, sticky='nswe')
+        # self.c.pack(side='bottom', expand = True, fill = BOTH)
+
+        self.c.update()  # wait till canvas is created
+        hbar.configure(command=self.__scroll_x)  # bind scrollbars to the canvas
+        vbar.configure(command=self.__scroll_y)
 
         self.setup()
         self.root.mainloop()
