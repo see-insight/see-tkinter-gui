@@ -91,10 +91,10 @@ class Image_Markup(object):
         self.old_x, self.old_y = None, None
 
     def save_canvas(self):
-        # x = self.root.winfo_rootx() + self.c.winfo_x()
-        # y = self.root.winfo_rooty() + self.c.winfo_y()
-        # x1 = x + self.c.winfo_width()
-        # y1 = y + self.c.winfo_height()
+        x = self.root.winfo_rootx() + self.c.winfo_x()
+        y = self.root.winfo_rooty() + self.c.winfo_y()
+        x1 = x + self.c.winfo_width()
+        y1 = y + self.c.winfo_height()
         print('x, y, x1, y1:', x,y,x1,y1)
         ImageGrab.grab().crop((self.c.bbox())).save("/Users/ishaan/Desktop/SavedCanvases/test.png")
 
