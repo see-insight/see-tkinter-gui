@@ -62,8 +62,10 @@ class Image_Markup(object):
         # self.c.pack(side='bottom', expand = True, fill = BOTH)
 
         self.c.update()  # wait till canvas is created
-        hbar.configure(command=self.__scroll_x)  # bind scrollbars to the canvas
-        vbar.configure(command=self.__scroll_y)
+        hbar.configure(command=self.scroll_x)  # bind scrollbars to the canvas
+        vbar.configure(command=self.scroll_y)
+        self.container = self.c.create_rectangle((0, 0, 900, 850), width=0)
+        self.show_image()
 
         self.setup()
         self.root.mainloop()
@@ -134,6 +136,69 @@ class Image_Markup(object):
         self.c.create_image(10,10, anchor=NW,image=img)
         self.root.mainloop()
 
+
+#--------------------------------------TEST FEATURE------------------------------------------------
+# Source: https://github.com/foobar167/junkyard/blob/master/manual_image_annotation1/polygon/gui_canvas.py
+    
+    def scroll_x(self, *args, **kwargs):
+        """ Scroll canvas horizontally and redraw the image """
+        self.c.xview(*args)  # scroll horizontally
+        self.show_image()  # redraw the image
+
+    # noinspection PyUnusedLocal
+    def scroll_y(self, *args, **kwargs):
+        """ Scroll canvas vertically and redraw the image """
+        self.c.yview(*args)  # scroll vertically
+        self.show_image()  # redraw the image
+
+    def show_image(self):
+        """ Show image on the Canvas. Implements correct image zoom almost like in Google Maps """
+        box_image = self.c.coords(self.container)  # get image area
+        box_canvas = (self.c.canvasx(0),  # get visible area of the canvas
+                      self.c.canvasy(0),
+                      self.c.canvasx(self.c.winfo_width()),
+                      self.c.canvasy(self.c.winfo_height()))
+        box_img_int = tuple(map(int, box_image))  # convert to integer or it will not work properly
+        # Get scroll region box
+        box_scroll = [min(box_img_int[0], box_canvas[0]), min(box_img_int[1], box_canvas[1]),
+                      max(box_img_int[2], box_canvas[2]), max(box_img_int[3], box_canvas[3])]
+        # Horizontal part of the image is in the visible area
+        if  box_scroll[0] == box_canvas[0] and box_scroll[2] == box_canvas[2]:
+            box_scroll[0]  = box_img_int[0]
+            box_scroll[2]  = box_img_int[2]
+        # Vertical part of the image is in the visible area
+        if  box_scroll[1] == box_canvas[1] and box_scroll[3] == box_canvas[3]:
+            box_scroll[1]  = box_img_int[1]
+            box_scroll[3]  = box_img_int[3]
+        # Convert scroll region to tuple and to integer
+        self.c.configure(scrollregion=tuple(map(int, box_scroll)))  # set scroll region
+        x1 = max(box_canvas[0] - box_image[0], 0)  # get coordinates (x1,y1,x2,y2) of the image tile
+        y1 = max(box_canvas[1] - box_image[1], 0)
+        x2 = min(box_canvas[2], box_image[2]) - box_image[0]
+        y2 = min(box_canvas[3], box_image[3]) - box_image[1]
+        if int(x2 - x1) > 0 and int(y2 - y1) > 0:  # show image if it in the visible area
+            if self.__huge and self.__curr_img < 0:  # show huge image, which does not fit in RAM
+                h = int((y2 - y1) / self.imscale)  # height of the tile banŹ
+                self.__tile[1][3] = h  # set the tile band height
+                self.__tile[2] = self.__offset + self.imwidth * int(y1 / self.imscale) * 3
+                self.__image.close()
+                self.__image = Image.open(self.path)  # reopen / reset image
+                self.__image.size = (self.imwidth, h)  # set size of the tile band
+                self.__image.tile = [self.__tile]
+                image = self.__image.crop((int(x1 / self.imscale), 0, int(x2 / self.imscale), h))
+            else:  # show normal image
+                image = self.__pyramid[max(0, self.__curr_img)].crop(  # crop current img from pyramid
+                                    (int(x1 / self.__scale), int(y1 / self.__scale),
+                                     int(x2 / self.__scale), int(y2 / self.__scale)))
+            #
+            imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self.__filter))
+            imageid = self.c.create_image(max(box_canvas[0], box_img_int[0]),
+                                               max(box_canvas[1], box_img_int[1]),
+                                               anchor='nw', image=imagetk)
+            self.c.lower(imageid)  # set image into background
+            self.c.imagetk = imagetk  # keep an extra reference to prevent garbage-collection
+
+#---------------------------------------------------------------------------------------------------------#
 
 
 if __name__ == '__main__':
